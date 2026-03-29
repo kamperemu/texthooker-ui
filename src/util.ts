@@ -40,20 +40,6 @@ export function updateScroll(
 	});
 }
 
-export function toTimeString(s: number) {
-	const hours = Math.floor(s / 3600);
-	const minutes = Math.floor((s - hours * 3600) / 60);
-	const seconds = s - hours * 3600 - minutes * 60;
-
-	return `${`${hours}`.padStart(2, '0')}:${`${minutes}`.padStart(2, '0')}:${`${seconds}`.padStart(2, '0')}`;
-}
-
-export function timeStringToSeconds(timeString: string) {
-	const [hours, minutes, seconds] = timeString.split(':').map((part) => Number.parseInt(part, 10));
-
-	return hours * 60 * 60 + minutes * 60 + seconds;
-}
-
 export function generateRandomUUID() {
 	const bytes = new Uint8Array(16);
 
@@ -103,16 +89,6 @@ export function applyCustomCSS(document: Document, customCSS: string) {
 
 		styleElement.appendChild(textNode);
 		document.head.append(styleElement);
-	}
-}
-
-export function applyAfkBlur(document: Document, isAfk: boolean) {
-	if (isAfk) {
-		document.body.style.filter = 'blur(8px)';
-		document.body.style.pointerEvents = 'none';
-	} else {
-		document.body.style.filter = null;
-		document.body.style.pointerEvents = 'auto';
 	}
 }
 

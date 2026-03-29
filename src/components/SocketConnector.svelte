@@ -4,7 +4,6 @@
 	import { SocketConnection } from '../socket';
 	import {
 		continuousReconnect$,
-		isPaused$,
 		openDialog$,
 		reconnectSecondarySocket$,
 		reconnectSocket$,
@@ -67,8 +66,6 @@
 						showCancel: false,
 					};
 				}
-
-				$isPaused$ = true;
 
 				intitialAttemptDone = true;
 				wasConnected = false;

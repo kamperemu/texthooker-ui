@@ -1,13 +1,9 @@
 <script lang="ts">
 	import {
-		mdiArrowULeftTop,
 		mdiCancel,
 		mdiCog,
 		mdiDelete,
 		mdiDeleteForever,
-		mdiNoteEdit,
-		mdiPause,
-		mdiPlay,
 		mdiWindowMaximize,
 		mdiWindowRestore,
 	} from '@mdi/js';
@@ -16,11 +12,6 @@
 	import { quintInOut } from 'svelte/easing';
 	import { fly } from 'svelte/transition';
 	import {
-		actionHistory$,
-		allowNewLineDuringPause$,
-		allowPasteDuringPause$,
-		autoStartTimerDuringPause$,
-		autoStartTimerDuringPausePaste$,
 		blockCopyOnPage$,
 		customCSS$,
 		dialogOpen$,
@@ -28,10 +19,7 @@
 		enabledReplacements$,
 		enablePaste$,
 		filterNonCJKLines$,
-		flashOnMissedLine$,
-		flashOnPauseTimeout$,
 		fontSize$,
-		isPaused$,
 		lastPipHeight$,
 		lastPipWidth$,
 		lineData$,
@@ -39,7 +27,6 @@
 		maxPipLines$,
 		mergeEqualLineStarts$,
 		newLine$,
-		notesOpen$,
 		onlineFont$,
 		openDialog$,
 		preventGlobalDuplicate$,
@@ -55,7 +42,6 @@
 	} from '../stores/stores';
 	import { LineType, OnlineFont, Theme, type LineItem, type LineItemEditEvent } from '../types';
 	import {
-		applyAfkBlur,
 		applyCustomCSS,
 		applyReplacements,
 		generateRandomUUID,
@@ -66,12 +52,9 @@
 	import DialogManager from './DialogManager.svelte';
 	import Icon from './Icon.svelte';
 	import Line from './Line.svelte';
-	import Notes from './Notes.svelte';
-	import Presets from './Presets.svelte';
 	import Settings from './Settings.svelte';
 	import SocketConnector from './SocketConnector.svelte';
 	import Spinner from './Spinner.svelte';
-	import Stats from './Stats.svelte';
 
 	let isSmFactor = false;
 	let settingsComponent: Settings;
@@ -102,32 +85,15 @@
 	const handleLine$ = newLine$.pipe(
 		filter(([_, lineType]) => {
 			const isPaste = lineType === LineType.PASTE;
-			const hasNoUserInteraction = !isPaste || (!$notesOpen$ && !$dialogOpen$ && !settingsOpen && !lineInEdit);
+			const hasNoUserInteraction = !isPaste || (!$dialogOpen$ && !settingsOpen && !lineInEdit);
 			const skipExternalLine = blockNextExternalLine && lineType === LineType.EXTERNAL;
 
 			if (skipExternalLine) {
 				blockNextExternalLine = false;
 			}
 
-			if (
-				(!$isPaused$ ||
-					(($allowPasteDuringPause$ || $autoStartTimerDuringPausePaste$) && isPaste) ||
-					(($allowNewLineDuringPause$ || $autoStartTimerDuringPause$) && !isPaste)) &&
-				hasNoUserInteraction &&
-				!skipExternalLine
-			) {
-				if (
-					$isPaused$ &&
-					(($autoStartTimerDuringPausePaste$ && isPaste) || ($autoStartTimerDuringPause$ && !isPaste))
-				) {
-					$isPaused$ = false;
-				}
-
+			if (hasNoUserInteraction && !skipExternalLine) {
 				return true;
-			}
-
-			if (!skipExternalLine && hasNoUserInteraction && $flashOnMissedLine$) {
-				handleMissedLine();
 			}
 
 			return false;
@@ -220,7 +186,7 @@
 	}
 
 	function handleKeyPress(event: KeyboardEvent) {
-		if ($notesOpen$ || $dialogOpen$ || settingsOpen || lineInEdit) {
+		if ($dialogOpen$ || settingsOpen || lineInEdit) {
 			return;
 		}
 
@@ -247,48 +213,9 @@
 			}
 		} else if (selectedLineIds.length && key === 'escape') {
 			deselectLines();
-		} else if (event.altKey && key === 'a') {
-			settingsComponent.handleReset(false);
-		} else if (event.altKey && key === 'q') {
-			settingsComponent.handleReset(true);
-		} else if ((event.ctrlKey || event.metaKey) && key === ' ') {
-			$isPaused$ = !$isPaused$;
 		} else if (event.altKey && key === 'g') {
 			$showConnectionIcon$ = !$showConnectionIcon$;
 		}
-	}
-
-	async function undoLastAction() {
-		if (!$actionHistory$.length) {
-			return;
-		}
-
-		const linesToRevert = $actionHistory$.pop();
-
-		let lineToRevert = linesToRevert.pop();
-
-		while (lineToRevert) {
-			const text = transformLine(lineToRevert.text, false);
-
-			if (text) {
-				const { id, index } = lineToRevert;
-
-				if (index > $lineData$.length - 1) {
-					$lineData$.push({ id, text });
-				} else if ($lineData$[index].id === id) {
-					$lineData$[index] = { id, text };
-				} else {
-					$lineData$.splice(index, 0, { id, text });
-				}
-			}
-
-			lineToRevert = linesToRevert.pop();
-		}
-
-		await tick();
-
-		$lineData$ = applyEqualLineStartMerge(applyMaxLinesAndGetRemainingLineData());
-		$actionHistory$ = $actionHistory$;
 	}
 
 	function removeLastLine() {
@@ -300,22 +227,19 @@
 
 		selectedLineIds = selectedLineIds.filter((selectedLineId) => selectedLineId !== removedLine.id);
 		$lineData$ = $lineData$;
-		$actionHistory$ = [...$actionHistory$, [{ ...removedLine, index: $lineData$.length }]];
 
 		$uniqueLines$.delete(removedLine.text);
 	}
 
 	function removeLines() {
 		const linesToDelete = new Set(selectedLineIds);
-		const newActionHistory: LineItem[] = [];
 
-		$lineData$ = $lineData$.filter((oldLine, index) => {
+		$lineData$ = $lineData$.filter((oldLine) => {
 			const hasLine = linesToDelete.has(oldLine.id);
 
 			linesToDelete.delete(oldLine.id);
 
 			if (hasLine) {
-				newActionHistory.push({ ...oldLine, index: index - newActionHistory.length });
 				$uniqueLines$.delete(oldLine.text);
 			}
 
@@ -323,10 +247,6 @@
 		});
 
 		selectedLineIds = linesToDelete.size ? [...linesToDelete] : [];
-
-		if (newActionHistory.length) {
-			$actionHistory$ = [...$actionHistory$, newActionHistory];
-		}
 	}
 
 	function deselectLines() {
@@ -421,42 +341,12 @@
 		hasPipFocus = event.type === 'focus';
 	}
 
-	function onAfkBlur({ detail: isAfk }: CustomEvent<boolean>) {
-		applyAfkBlur(document, isAfk);
-
-		if (pipWindow) {
-			applyAfkBlur(pipWindow.document, isAfk);
-		}
-	}
-
 	function executeUpdateScroll() {
 		updateScroll(window, lineContainer, $reverseLineOrder$, $displayVertical$);
 
 		if (pipWindow) {
 			updateScroll(pipWindow, pipContainer, $reverseLineOrder$, false);
 		}
-	}
-
-	function handleMissedLine() {
-		clearTimeout($flashOnPauseTimeout$);
-
-		if ($theme$ === Theme.GARDEN) {
-			settingsContainer.classList.add('bg-base-200');
-			settingsContainer.classList.remove('bg-base-100');
-			document.body.classList.add('bg-base-200');
-		}
-
-		document.body.classList.add('animate-[pulse_0.5s_cubic-bezier(0.4,0,0.6,1)_1]');
-
-		$flashOnPauseTimeout$ = window.setTimeout(() => {
-			if ($theme$ === Theme.GARDEN) {
-				settingsContainer.classList.add('bg-base-100');
-				settingsContainer.classList.remove('bg-base-200');
-				document.body.classList.remove('bg-base-200');
-			}
-
-			document.body.classList.remove('animate-[pulse_0.5s_cubic-bezier(0.4,0,0.6,1)_1]');
-		}, 500);
 	}
 
 	function transformLine(text: string, useReplacements = true) {
@@ -493,7 +383,6 @@
 			};
 
 			if (text) {
-				$actionHistory$ = [...$actionHistory$, [{ ...data.line, index: data.lineIndex }]];
 				$uniqueLines$.delete(data.originalText);
 				$uniqueLines$.add(text);
 			} else {
@@ -609,25 +498,11 @@
 <DialogManager />
 
 <header class="fixed top-0 right-0 flex justify-end items-center p-2 bg-base-100" bind:this={settingsContainer}>
-	<Stats on:afkBlur={onAfkBlur} />
 	{#if $websocketUrl$}
 		<SocketConnector />
 	{/if}
 	{#if $secondaryWebsocketUrl$}
 		<SocketConnector isPrimary={false} />
-	{/if}
-	{#if $isPaused$}
-		<div
-			role="button"
-			title="Continue"
-			class="mr-1 animate-[pulse_1.25s_cubic-bezier(0.4,0,0.6,1)_infinite] hover:text-primary sm:mr-2"
-		>
-			<Icon path={mdiPlay} width={iconSize} height={iconSize} on:click={() => ($isPaused$ = false)} />
-		</div>
-	{:else}
-		<div role="button" title="Pause" class="mr-1 hover:text-primary sm:mr-2">
-			<Icon path={mdiPause} width={iconSize} height={iconSize} on:click={() => ($isPaused$ = true)} />
-		</div>
 	{/if}
 	<div
 		role="button"
@@ -639,16 +514,6 @@
 	>
 		<Icon path={mdiDeleteForever} width={iconSize} height={iconSize} on:click={removeLastLine} />
 	</div>
-	<div
-		role="button"
-		title="Undo last Action"
-		class="mr-1 hover:text-primary sm:mr-2"
-		class:opacity-50={!$actionHistory$.length}
-		class:cursor-not-allowed={!$actionHistory$.length}
-		class:hover:text-primary={$actionHistory$.length}
-	>
-		<Icon path={mdiArrowULeftTop} width={iconSize} height={iconSize} on:click={undoLastAction} />
-	</div>
 	{#if selectedLineIds.length}
 		<div role="button" title="Remove selected Lines" class="mr-1 hover:text-primary sm:mr-2">
 			<Icon path={mdiDelete} width={iconSize} height={iconSize} on:click={removeLines} />
@@ -657,9 +522,6 @@
 			<Icon path={mdiCancel} width={iconSize} height={iconSize} on:click={deselectLines} />
 		</div>
 	{/if}
-	<div role="button" title="Open Notes" class="mr-1 hover:text-primary sm:mr-2">
-		<Icon path={mdiNoteEdit} width={iconSize} height={iconSize} on:click={() => ($notesOpen$ = true)} />
-	</div>
 	{#if pipAvailable}
 		<div
 			role="button"
@@ -692,13 +554,11 @@
 		on:layoutChange={executeUpdateScroll}
 		on:maxLinesChange={() => ($lineData$ = applyMaxLinesAndGetRemainingLineData())}
 	/>
-	<Presets isQuickSwitch={true} on:layoutChange={executeUpdateScroll} />
 </header>
 <main
 	class="flex flex-col flex-1 break-all px-4 w-full h-full overflow-auto"
 	class:py-16={!$displayVertical$}
 	class:py-8={$displayVertical$}
-	class:opacity-50={$notesOpen$}
 	class:flex-col-reverse={$reverseLineOrder$}
 	style:font-size={`${$fontSize$}px`}
 	style:font-family={$onlineFont$ !== OnlineFont.OFF ? $onlineFont$ : undefined}
@@ -722,14 +582,6 @@
 		/>
 	{/each}
 </main>
-{#if $notesOpen$}
-	<div
-		class="bg-base-200 fixed top-0 right-0 z-[60] flex h-full w-full max-w-3xl flex-col justify-between"
-		in:fly|local={{ x: 100, duration: 100, easing: quintInOut }}
-	>
-		<Notes />
-	</div>
-{/if}
 <div
 	id="pip-container"
 	class="flex flex-col flex-1 flex flex-col break-all px-4 w-full h-full overflow-auto"

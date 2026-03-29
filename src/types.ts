@@ -46,59 +46,27 @@ export interface Settings {
 	websocketUrl$: string;
 	secondaryWebsocketUrl$: string;
 	fontSize$: number;
-	characterMilestone$: number;
 	onlineFont$: string;
 	preventLastDuplicate$: number;
 	maxLines$: number;
 	maxPipLines$: number;
-	afkTimer$: number;
-	adjustTimerOnAfk$: boolean;
 	enableExternalClipboardMonitor$: boolean;
-	showPresetQuickSwitch$: boolean;
 	skipResetConfirmations$: boolean;
-	persistStats$: boolean;
-	persistNotes$: boolean;
 	persistLines$: boolean;
-	persistActionHistory$: boolean;
 	enablePaste$: boolean;
 	blockCopyOnPage$: boolean;
-	allowPasteDuringPause$: boolean;
-	allowNewLineDuringPause$: boolean;
-	autoStartTimerDuringPausePaste$: boolean;
-	autoStartTimerDuringPause$: boolean;
 	preventGlobalDuplicate$: boolean;
 	mergeEqualLineStarts$: boolean;
 	filterNonCJKLines: boolean;
-	flashOnMissedLine$: boolean;
 	displayVertical$: boolean;
 	reverseLineOrder$: boolean;
 	preserveWhitespace$: boolean;
 	removeAllWhitespace$: boolean;
-	showTimer$: boolean;
-	showSpeed$: boolean;
-	showCharacterCount$: boolean;
-	showLineCount$: boolean;
-	blurStats$: boolean;
 	enableLineAnimation$: boolean;
-	enableAfkBlur$: boolean;
-	enableAfkBlurRestart$: boolean;
 	continuousReconnect$: boolean;
 	showConnectionErrors$: boolean;
 	showConnectionIcon$: boolean;
 	customCSS$: string;
-}
-
-export interface ExportedData {
-	'bannou-texthooker-timeValue': number;
-	'bannou-texthooker-userNotes': string;
-	'bannou-texthooker-lineData': LineItem[];
-	'bannou-texthooker-actionHistory': LineItem[][];
-}
-
-export interface ExportedSettings {
-	currentSettings: Settings;
-	settingPresets: SettingPreset[];
-	lastSettingsPreset: string;
 }
 
 export interface ReplacementItem {
@@ -106,11 +74,6 @@ export interface ReplacementItem {
 	replaces: string;
 	flags: string[];
 	enabled: boolean;
-}
-
-export interface SettingPreset {
-	name: string;
-	settings: Settings;
 }
 
 export interface DialogResult<T = undefined> {
