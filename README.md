@@ -1,6 +1,6 @@
 # Texthooker UI
 
-A fork that cleans up features that I don't need in texthooker UI because I'm a minimalist freak.
+A fork that cleans up features that I don't need in texthooker UI because I'm a minimalist freak. WARNING: Heavy AI use.
 
 ## Building
 
