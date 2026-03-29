@@ -1,8 +1,6 @@
 <script lang="ts">
 	import {
 		mdiHelpCircle,
-		mdiWeatherNight,
-		mdiWhiteBalanceSunny,
 	} from '@mdi/js';
 	import { createEventDispatcher, tick } from 'svelte';
 	import {
@@ -43,7 +41,6 @@
 	import {
 		LineType,
 		OnlineFont,
-		Theme,
 		type DialogResult,
 		type LineItem,
 	} from '../types';
@@ -363,27 +360,6 @@
 		class="flex flex-col max-[800px]:w-[90vw] min-[800px]:grid grid-cols-[max-content,auto,max-content,auto] gap-3 absolute overflow-auto h-[90vh] top-11 z-10 py-4 pr-8 pl-4 border bg-base-200 overscroll-contain"
 		use:clickOutside={handleSettingsClick}
 	>
-		<div class="mb-2" style="grid-column: 1/5;">
-			<div class="flex text-sm gap-x-5 min-[600px]:justify-between max-[600px]:flex-wrap max-[600px]:gap-y-5">
-				<div
-					role="button"
-					class="flex flex-col items-center hover:text-primary"
-					on:click={() => ($theme$ = $theme$ === Theme.BUSINESS ? Theme.GARDEN : Theme.BUSINESS)}
-					on:keyup={dummyFn}
-				>
-					<label class="swap swap-rotate">
-						<input
-							type="checkbox"
-							checked={$theme$ === Theme.BUSINESS}
-							on:change={() => ($theme$ = $theme$ === Theme.BUSINESS ? Theme.GARDEN : Theme.BUSINESS)}
-						/>
-						<Icon class="swap-on" path={mdiWeatherNight} />
-						<Icon class="swap-off" path={mdiWhiteBalanceSunny} />
-					</label>
-					<span class="label-text">Theme</span>
-				</div>
-			</div>
-		</div>
 		<ReplacementSettings on:applyReplacements />
 		<span class="label-text col-span-2">Window Title</span>
 		<input class="input input-bordered h-8 col-span-2" bind:value={$windowTitle$} />
