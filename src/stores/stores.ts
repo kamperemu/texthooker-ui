@@ -20,16 +20,14 @@ export const defaultSettings: Settings = {
 	replacements$: [],
 	windowTitle$: '',
 	websocketUrl$: 'ws://localhost:6677',
-	secondaryWebsocketUrl$: '',
+	secondaryWebsocketUrl$: 'ws://localhost:7331',
 	fontSize$: 24,
 	onlineFont$: OnlineFont.OFF,
 	preventLastDuplicate$: 0,
 	maxLines$: 0,
-	maxPipLines$: 1,
 	enableExternalClipboardMonitor$: false,
-	skipResetConfirmations$: false,
 	persistLines$: true,
-	enablePaste$: false,
+	enablePaste$: true,
 	blockCopyOnPage$: false,
 	preventGlobalDuplicate$: false,
 	mergeEqualLineStarts$: false,
@@ -38,9 +36,8 @@ export const defaultSettings: Settings = {
 	reverseLineOrder$: false,
 	preserveWhitespace$: true,
 	removeAllWhitespace$: false,
-	enableLineAnimation$: false,
 	continuousReconnect$: false,
-	showConnectionErrors$: true,
+	showConnectionErrors$: false,
 	showConnectionIcon$: true,
 	customCSS$: '',
 };
@@ -69,18 +66,10 @@ export const preventLastDuplicate$ = writableNumberSubject()(
 
 export const maxLines$ = writableNumberSubject()('bannou-texthooker-maxLines', defaultSettings.maxLines$);
 
-export const maxPipLines$ = writableNumberSubject()('bannou-texthooker-maxPipLines', defaultSettings.maxPipLines$);
-
 export const enableExternalClipboardMonitor$ = writableBooleanSubject()(
 	'bannou-texthooker-enableExternalClipboardMonitor',
 	defaultSettings.enableExternalClipboardMonitor$
 );
-
-export const skipResetConfirmations$ = writableBooleanSubject()(
-	'bannou-texthooker-skipResetConfirmations',
-	defaultSettings.skipResetConfirmations$
-);
-
 
 export const persistLines$ = writableBooleanSubject()('bannou-texthooker-persistLines', defaultSettings.persistLines$);
 
@@ -126,11 +115,6 @@ export const removeAllWhitespace$ = writableBooleanSubject()(
 	defaultSettings.removeAllWhitespace$
 );
 
-export const enableLineAnimation$ = writableBooleanSubject()(
-	'bannou-texthooker-enableLineAnimation',
-	defaultSettings.enableLineAnimation$
-);
-
 export const continuousReconnect$ = writableBooleanSubject()(
 	'bannou-texthooker-continuousReconnect',
 	defaultSettings.continuousReconnect$
@@ -167,8 +151,3 @@ export const reconnectSecondarySocket$ = new Subject<void>();
 export const showSpinner$ = writable<boolean>(false);
 
 export const enabledReplacements$ = writable<ReplacementItem[]>([]);
-
-export const lastPipHeight$ = writableNumberSubject()('bannou-texthooker-lastPipHeight', 0);
-
-export const lastPipWidth$ = writableNumberSubject()('bannou-texthooker-lastPipWidth', 0);
-
