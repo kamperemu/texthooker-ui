@@ -49,7 +49,6 @@ export interface Settings {
 	onlineFont$: string;
 	preventLastDuplicate$: number;
 	maxLines$: number;
-	maxPipLines$: number;
 	enableExternalClipboardMonitor$: boolean;
 	skipResetConfirmations$: boolean;
 	persistLines$: boolean;

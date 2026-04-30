@@ -16,7 +16,6 @@
 		fontSize$,
 		lineData$,
 		maxLines$,
-		maxPipLines$,
 		mergeEqualLineStarts$,
 		newLine$,
 		onlineFont$,
@@ -52,7 +51,6 @@
 	export let selectedLineIds: string[];
 	export let settingsOpen: boolean;
 	export let settingsElement: SVGElement;
-	export let pipAvailable: boolean;
 
 	export async function handleReset(linesOnly: boolean) {
 		if (!$skipResetConfirmations$) {
@@ -261,19 +259,6 @@
 		}
 	}
 
-	function handleMaxPipLinesBlur(event) {
-		const target = event.target as HTMLInputElement;
-		const value = Number.parseInt(target.value || '0');
-
-		if (!value || value < 0) {
-			$maxPipLines$ = 1;
-		} else {
-			$maxPipLines$ = value;
-		}
-
-		target.value = `${$maxPipLines$}`;
-	}
-
 	async function handleMaxLinesChange() {
 		const lineDiff = $lineData$.length - $maxLines$;
 
@@ -411,16 +396,6 @@
 			value={$maxLines$}
 			on:blur={handleMaxLinesBlur}
 		/>
-		{#if pipAvailable}
-			<span class="label-text col-span-2">Max lines (floating window)</span>
-			<input
-				type="number"
-				class="input input-bordered h-8 mb-2 col-span-2"
-				min="0"
-				value={$maxPipLines$}
-				on:blur={handleMaxPipLinesBlur}
-			/>
-		{/if}
 		<span class="label-text">Enable external Clipboard Monitor</span>
 		<input type="checkbox" class="checkbox checkbox-primary ml-2" bind:checked={$enableExternalClipboardMonitor$} />
 		<span class="label-text">Skip Reset Confirmations</span>

@@ -13,7 +13,6 @@
 	export let line: LineItem;
 	export let index: number;
 	export let isLast: boolean;
-	export let pipWindow: Window = undefined;
 
 	export function deselect() {
 		isSelected = false;
@@ -30,12 +29,12 @@
 	let isSelected = false;
 	let isEditable = false;
 
-	$: isVerticalDisplay = !pipWindow && $displayVertical$;
+	$: isVerticalDisplay = $displayVertical$;
 
 	onMount(() => {
 		if (isLast) {
 			updateScroll(
-				pipWindow || window,
+				window,
 				paragraph.parentElement,
 				$reverseLineOrder$,
 				isVerticalDisplay,
@@ -50,10 +49,6 @@
 	});
 
 	function handleDblClick(event: MouseEvent) {
-		if (pipWindow) {
-			return;
-		}
-
 		window.getSelection()?.removeAllRanges();
 
 		if (event.ctrlKey || event.metaKey) {

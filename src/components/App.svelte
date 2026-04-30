@@ -4,8 +4,6 @@
 		mdiCog,
 		mdiDelete,
 		mdiDeleteForever,
-		mdiWindowMaximize,
-		mdiWindowRestore,
 	} from '@mdi/js';
 	import { debounceTime, filter, fromEvent, map, NEVER, switchMap, tap } from 'rxjs';
 	import { onMount, tick } from 'svelte';
@@ -20,11 +18,8 @@
 		enablePaste$,
 		filterNonCJKLines$,
 		fontSize$,
-		lastPipHeight$,
-		lastPipWidth$,
 		lineData$,
 		maxLines$,
-		maxPipLines$,
 		mergeEqualLineStarts$,
 		newLine$,
 		onlineFont$,
@@ -67,10 +62,6 @@
 	let lineInEdit = false;
 	let blockNextExternalLine = false;
 	let wakeLock = null;
-	let pipContainer: HTMLElement;
-	let pipWindow: Window | undefined;
-	let pipResizeTimeout: number;
-	let hasPipFocus = false;
 
 	const wakeLockAvailable = 'wakeLock' in navigator;
 
@@ -154,16 +145,6 @@
 	$: iconSize = isSmFactor ? '1.5rem' : '1.25rem';
 
 	$: $enabledReplacements$ = $replacements$.filter((replacment) => replacment.enabled);
-
-	$: pipAvailable = 'documentPictureInPicture' in window && !!pipContainer;
-
-	$: pipLines = pipAvailable && $lineData$ ? $lineData$.slice(-$maxPipLines$) : [];
-
-	$: if (pipWindow) {
-		pipWindow.document.body.dataset.theme = $theme$;
-
-		applyCustomCSS(pipWindow.document, $customCSS$);
-	}
 
 	onMount(() => {
 		mountFunction();
@@ -257,96 +238,8 @@
 		selectedLineIds = [];
 	}
 
-	async function handlePipAction() {
-		if (pipWindow) {
-			return pipWindow.close();
-		}
-
-		pipWindow = await window.documentPictureInPicture
-			.requestWindow(
-				$lastPipHeight$ > 0 && $lastPipWidth$ > 0
-					? { height: $lastPipHeight$, width: $lastPipWidth$, preferInitialWindowPlacement: false }
-					: { preferInitialWindowPlacement: false },
-			)
-			.catch(({ message }) => {
-				$openDialog$ = {
-					message: `Error opening floating window: ${message}`,
-					showCancel: false,
-				};
-
-				return undefined;
-			});
-
-		if (!pipWindow) {
-			return;
-		}
-
-		pipWindow.document.body.appendChild(pipContainer);
-
-		pipWindow.addEventListener('pagehide', onPipHide, { once: true });
-		pipWindow.addEventListener('resize', onPipResize, false);
-		pipWindow.addEventListener('blur', onPipFocusBlur, false);
-		pipWindow.addEventListener('focus', onPipFocusBlur, false);
-
-		[...document.styleSheets].forEach((styleSheet) => {
-			if (styleSheet.ownerNode instanceof Element && styleSheet.ownerNode.id === 'user-css') {
-				return;
-			}
-
-			try {
-				const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
-				const style = document.createElement('style');
-
-				style.textContent = cssRules;
-				pipWindow.document.head.appendChild(style);
-			} catch (_error) {
-				const link = document.createElement('link');
-
-				link.rel = 'stylesheet';
-				link.type = styleSheet.type;
-				link.media = styleSheet.media.toString();
-				link.href = styleSheet.href;
-				pipWindow.document.head.appendChild(link);
-			}
-		});
-	}
-
-	function onPipHide() {
-		updatePipDimensions();
-
-		pipWindow.removeEventListener('resize', onPipResize, false);
-		pipWindow.removeEventListener('blur', onPipFocusBlur, false);
-		pipWindow.removeEventListener('focus', onPipFocusBlur, false);
-
-		hasPipFocus = false;
-		pipWindow = undefined;
-	}
-
-	function onPipResize() {
-		window.clearTimeout(pipResizeTimeout);
-
-		pipResizeTimeout = window.setTimeout(updatePipDimensions, 500);
-	}
-
-	function updatePipDimensions() {
-		if (!pipWindow) {
-			return;
-		}
-
-		$lastPipHeight$ = pipWindow.document.body.clientHeight;
-		$lastPipWidth$ = pipWindow.document.body.clientWidth;
-	}
-
-	function onPipFocusBlur(event: Event) {
-		hasPipFocus = event.type === 'focus';
-	}
-
 	function executeUpdateScroll() {
 		updateScroll(window, lineContainer, $reverseLineOrder$, $displayVertical$);
-
-		if (pipWindow) {
-			updateScroll(pipWindow, pipContainer, $reverseLineOrder$, false);
-		}
 	}
 
 	function transformLine(text: string, useReplacements = true) {
@@ -522,20 +415,6 @@
 			<Icon path={mdiCancel} width={iconSize} height={iconSize} on:click={deselectLines} />
 		</div>
 	{/if}
-	{#if pipAvailable}
-		<div
-			role="button"
-			class="mr-1 hover:text-primary sm:mr-2"
-			title={pipWindow ? 'Close Floating Window' : 'Open Floating Window'}
-		>
-			<Icon
-				width={iconSize}
-				height={iconSize}
-				path={pipWindow ? mdiWindowMaximize : mdiWindowRestore}
-				on:click={handlePipAction}
-			/>
-		</div>
-	{/if}
 	<Icon
 		class="cursor-pointer mr-1 hover:text-primary md:mr-2"
 		path={mdiCog}
@@ -546,7 +425,6 @@
 	/>
 	<Settings
 		{settingsElement}
-		{pipAvailable}
 		bind:settingsOpen
 		bind:selectedLineIds
 		bind:this={settingsComponent}
@@ -582,18 +460,3 @@
 		/>
 	{/each}
 </main>
-<div
-	id="pip-container"
-	class="flex flex-col flex-1 flex flex-col break-all px-4 w-full h-full overflow-auto"
-	class:flex-col-reverse={$reverseLineOrder$}
-	class:hidden={!pipWindow}
-	style:font-size={`${$fontSize$}px`}
-	style:font-family={$onlineFont$ !== OnlineFont.OFF ? $onlineFont$ : undefined}
-	bind:this={pipContainer}
->
-	{#if pipWindow}
-		{#each pipLines as line, index (line.id)}
-			<Line {line} {index} {pipWindow} isLast={pipLines.length - 1 === index} />
-		{/each}
-	{/if}
-</div>
