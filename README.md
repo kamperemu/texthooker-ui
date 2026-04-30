@@ -1,6 +1,8 @@
 # Texthooker UI
 
-A fork that cleans up features that I don't need in texthooker UI because I'm a minimalist freak. WARNING: Heavy AI use.
+Hosted on https://kamperemu.github.io/texthooker-ui/.
+
+A fork that cleans up features that I don't need in texthooker UI because I'm a minimalist freak. WARNING: Heavy AI use. 
 
 ## Building
 
@@ -18,4 +20,4 @@ pnpm run build
 pnpm run preview
 ```
 
-The page can be opened via the index.html inside the "docs" folder and is usable without the need of hosting it via a server.
+The page can be opened via the index.html inside the "docs" folder and is usable without the need of hosting it via a server. 
