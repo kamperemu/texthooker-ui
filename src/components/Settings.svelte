@@ -10,7 +10,6 @@
 		dialogOpen$,
 		displayVertical$,
 		enableExternalClipboardMonitor$,
-		enableLineAnimation$,
 		enablePaste$,
 		filterNonCJKLines$,
 		fontSize$,
@@ -32,7 +31,6 @@
 		showConnectionErrors$,
 		showConnectionIcon$,
 		showSpinner$,
-		skipResetConfirmations$,
 		theme$,
 		websocketUrl$,
 		windowTitle$,
@@ -53,25 +51,35 @@
 	export let settingsElement: SVGElement;
 
 	export async function handleReset(linesOnly: boolean) {
-		if (!$skipResetConfirmations$) {
-			const { canceled } = await new Promise<DialogResult>((resolve) => {
-				$openDialog$ = {
-					icon: mdiHelpCircle,
-					message: linesOnly
-						? 'All displayed and stored Lines will be cleared'
-						: 'Clear stored Lines',
-					callback: resolve,
-				};
-			});
+		const { canceled } = await new Promise<DialogResult>((resolve) => {
+			$openDialog$ = {
+				icon: mdiHelpCircle,
+				message: linesOnly
+					? 'All displayed and stored Lines will be cleared'
+					: 'Clear stored Lines',
+				callback: resolve,
+			};
+		});
 
-			if (canceled) {
-				return;
-			}
+		if (canceled) {
+			return;
 		}
 
 		$lineData$ = [];
 		selectedLineIds = [];
 		window.localStorage.removeItem('bannou-texthooker-lineData');
+	}
+
+	async function confirm(message: string): Promise<boolean> {
+		const { canceled } = await new Promise<DialogResult>((resolve) => {
+			$openDialog$ = {
+				icon: mdiHelpCircle,
+				message,
+				callback: resolve,
+			};
+		});
+
+		return !canceled;
 	}
 
 	const dispatch = createEventDispatcher<{ layoutChange: void; maxLinesChange: void }>();
@@ -173,15 +181,7 @@
 			return;
 		}
 
-		const { canceled } = await new Promise<DialogResult>((resolve) => {
-			$openDialog$ = {
-				icon: mdiHelpCircle,
-				message,
-				callback: resolve,
-			};
-		});
-
-		if (!canceled) {
+		if (await confirm(message as string)) {
 			window.localStorage.removeItem(storageKey);
 		}
 	}
@@ -209,15 +209,7 @@
 			return;
 		}
 
-		const { canceled } = await new Promise<DialogResult>((resolve) => {
-			$openDialog$ = {
-				icon: mdiHelpCircle,
-				message: 'Apply to current lines',
-				callback: resolve,
-			};
-		});
-
-		if (canceled) {
+		if (!(await confirm('Apply to current lines'))) {
 			return;
 		}
 
@@ -266,18 +258,10 @@
 			return;
 		}
 
-		const { canceled } = await new Promise<DialogResult>((resolve) => {
-			$openDialog$ = {
-				icon: mdiHelpCircle,
-				message: `This will remove the first ${lineDiff} line(s)`,
-				callback: resolve,
-			};
-		});
-
-		if (canceled) {
-			$maxLines$ = 0;
-		} else {
+		if (await confirm(`This will remove the first ${lineDiff} line(s)`)) {
 			dispatch('maxLinesChange');
+		} else {
+			$maxLines$ = 0;
 		}
 	}
 
@@ -286,47 +270,31 @@
 			return;
 		}
 
-		const { canceled } = await new Promise<DialogResult>((resolve) => {
-			$openDialog$ = {
-				icon: mdiHelpCircle,
-				message: 'Apply to current lines',
-				callback: resolve,
-			};
-		});
-
-		if (!canceled) {
-			const uniqueLines = new Set<string>();
-			const removedLineIds = new Set<string>();
-
-			$lineData$ = $lineData$.filter((line) => {
-				if (uniqueLines.has(line.text)) {
-					removedLineIds.add(line.id);
-					return false;
-				}
-
-				uniqueLines.add(line.text);
-				return true;
-			});
-			selectedLineIds = selectedLineIds.filter((selectedLineId) => !removedLineIds.has(selectedLineId));
+		if (!(await confirm('Apply to current lines'))) {
+			return;
 		}
+
+		const uniqueLines = new Set<string>();
+		const removedLineIds = new Set<string>();
+
+		$lineData$ = $lineData$.filter((line) => {
+			if (uniqueLines.has(line.text)) {
+				removedLineIds.add(line.id);
+				return false;
+			}
+
+			uniqueLines.add(line.text);
+			return true;
+		});
+		selectedLineIds = selectedLineIds.filter((selectedLineId) => !removedLineIds.has(selectedLineId));
 	}
 
 	async function handleRemoveAllWhiteSpaceChange() {
-		if ($removeAllWhitespace$) {
-			const { canceled } = await new Promise<DialogResult>((resolve) => {
-				$openDialog$ = {
-					icon: mdiHelpCircle,
-					message: 'Apply to current Lines',
-					callback: resolve,
-				};
+		if ($removeAllWhitespace$ && await confirm('Apply to current Lines')) {
+			$lineData$ = $lineData$.map((oldLine) => {
+				oldLine.text = oldLine.text.replace(/\s/g, '').trim();
+				return oldLine;
 			});
-
-			if (!canceled) {
-				$lineData$ = $lineData$.map((oldLine) => {
-					oldLine.text = oldLine.text.replace(/\s/g, '').trim();
-					return oldLine;
-				});
-			}
 		}
 	}
 
@@ -398,8 +366,6 @@
 		/>
 		<span class="label-text">Enable external Clipboard Monitor</span>
 		<input type="checkbox" class="checkbox checkbox-primary ml-2" bind:checked={$enableExternalClipboardMonitor$} />
-		<span class="label-text">Skip Reset Confirmations</span>
-		<input type="checkbox" class="checkbox checkbox-primary ml-2" bind:checked={$skipResetConfirmations$} />
 		<span class="label-text">Store Lines persistently</span>
 		<input
 			type="checkbox"
@@ -446,8 +412,6 @@
 			bind:checked={$removeAllWhitespace$}
 			on:change={handleRemoveAllWhiteSpaceChange}
 		/>
-		<span class="label-text">Enable Line Animation</span>
-		<input type="checkbox" class="checkbox checkbox-primary ml-2" bind:checked={$enableLineAnimation$} />
 		<span class="label-text">Continuous Reconnect</span>
 		<input
 			type="checkbox"

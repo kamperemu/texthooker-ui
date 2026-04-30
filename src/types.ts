@@ -50,7 +50,6 @@ export interface Settings {
 	preventLastDuplicate$: number;
 	maxLines$: number;
 	enableExternalClipboardMonitor$: boolean;
-	skipResetConfirmations$: boolean;
 	persistLines$: boolean;
 	enablePaste$: boolean;
 	blockCopyOnPage$: boolean;
@@ -61,7 +60,6 @@ export interface Settings {
 	reverseLineOrder$: boolean;
 	preserveWhitespace$: boolean;
 	removeAllWhitespace$: boolean;
-	enableLineAnimation$: boolean;
 	continuousReconnect$: boolean;
 	showConnectionErrors$: boolean;
 	showConnectionIcon$: boolean;

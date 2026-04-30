@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
-	import { fly } from 'svelte/transition';
 	import {
 		displayVertical$,
-		enableLineAnimation$,
 		preserveWhitespace$,
 		reverseLineOrder$,
 	} from '../stores/stores';
@@ -38,7 +36,7 @@
 				paragraph.parentElement,
 				$reverseLineOrder$,
 				isVerticalDisplay,
-				$enableLineAnimation$ ? 'smooth' : 'auto',
+				'auto',
 			);
 		}
 	});
@@ -104,7 +102,6 @@
 		on:dblclick={handleDblClick}
 		on:keyup={dummyFn}
 		bind:this={paragraph}
-		in:fly={{ x: isVerticalDisplay ? 100 : -100, duration: $enableLineAnimation$ ? 250 : 0 }}
 	>
 		{line.text}
 	</p>

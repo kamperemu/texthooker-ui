@@ -26,7 +26,6 @@ export const defaultSettings: Settings = {
 	preventLastDuplicate$: 0,
 	maxLines$: 0,
 	enableExternalClipboardMonitor$: false,
-	skipResetConfirmations$: false,
 	persistLines$: true,
 	enablePaste$: false,
 	blockCopyOnPage$: false,
@@ -37,7 +36,6 @@ export const defaultSettings: Settings = {
 	reverseLineOrder$: false,
 	preserveWhitespace$: true,
 	removeAllWhitespace$: false,
-	enableLineAnimation$: false,
 	continuousReconnect$: false,
 	showConnectionErrors$: true,
 	showConnectionIcon$: true,
@@ -71,11 +69,6 @@ export const maxLines$ = writableNumberSubject()('bannou-texthooker-maxLines', d
 export const enableExternalClipboardMonitor$ = writableBooleanSubject()(
 	'bannou-texthooker-enableExternalClipboardMonitor',
 	defaultSettings.enableExternalClipboardMonitor$
-);
-
-export const skipResetConfirmations$ = writableBooleanSubject()(
-	'bannou-texthooker-skipResetConfirmations',
-	defaultSettings.skipResetConfirmations$
 );
 
 export const persistLines$ = writableBooleanSubject()('bannou-texthooker-persistLines', defaultSettings.persistLines$);
@@ -120,11 +113,6 @@ export const preserveWhitespace$ = writableBooleanSubject()(
 export const removeAllWhitespace$ = writableBooleanSubject()(
 	'bannou-texthooker-removeAllWhitespace',
 	defaultSettings.removeAllWhitespace$
-);
-
-export const enableLineAnimation$ = writableBooleanSubject()(
-	'bannou-texthooker-enableLineAnimation',
-	defaultSettings.enableLineAnimation$
 );
 
 export const continuousReconnect$ = writableBooleanSubject()(
